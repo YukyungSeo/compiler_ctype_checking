@@ -1,2 +1,5 @@
 .idea
 *.c
+*.class
+*.xml
+*.j
