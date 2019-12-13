@@ -83,6 +83,8 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
         newTexts.put(ctx, classProlog + var_decl + fun_decl);
 
         System.out.println(newTexts.get(ctx));
+        FileOutput fileOutput = new FileOutput();
+        fileOutput.fileWrite("./Test.j", newTexts.get(ctx));
     }
 
 
@@ -438,17 +440,6 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 break;
 
             case "and":
-//                expr_andor += newTexts.get(ctx.expr(0))
-//                        + "ifne " + l2 + "\n"
-//                        + "ldc 0" + "\n"
-//                        + "goto" + lend + "\n"
-//                        + l2 + ": " + "\n"
-//                        + newTexts.get(ctx.expr(1))
-//                        + "ifne " + l2 + "\n"
-//                        + "ldc 0" + "\n"
-//                        + "goto" + lend + "\n"
-//                        + "ldc 1" + "\n"
-//                        + lend + ": " + "\n";
                 expr += "ifne " + lend + "\n"
                         + "pop" + "\n"
                         + "ldc 0" + "\n"
