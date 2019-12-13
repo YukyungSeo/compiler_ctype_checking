@@ -9,10 +9,8 @@ public class Test {
     }
 
     public static void main(String[] var0) {
-        int x = 4;
-        int y = 3;
-        if(x == 1 && y == 3){
-            System.out.println(2);
-        }
+        float x = 4;
+        float y = 3;
+        System.out.println(x+y);
     }
 }

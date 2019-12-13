@@ -55,7 +55,7 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
         if (isArrayDecl(ctx)) {
             symbolTable.putLocalVar(getLocalVarName(ctx), Type.INTARRAY);
         } else if (isDeclWithInit(ctx)) {
-            symbolTable.putLocalVarWithInitVal(getLocalVarName(ctx), Type.INT, initVal(ctx));
+            symbolTable.putLocalVarWithInitVal(getLocalVarName(ctx), getType(ctx.type_spec()), initVal(ctx));
         } else { // simple decl
             symbolTable.putLocalVar(getLocalVarName(ctx), Type.INT);
         }
@@ -256,11 +256,16 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
         String varDecl = "";
 
         if (isDeclWithInit(ctx)) {
-            String vId = symbolTable.getVarId(ctx);
-            varDecl += "ldc " + ctx.LITERAL().getText() + "\n"
-                    + "istore_" + vId + "\n";
+            if(getType(ctx.type_spec()).equals(Type.INT)) {
+                String vId = symbolTable.getVarId(ctx);
+                varDecl += "ldc " + ctx.LITERAL().getText() + "\n"
+                        + "istore_" + vId + "\n";
+            } else if(getType(ctx.type_spec()).equals(Type.FLOAT)) {
+                String vId = symbolTable.getVarId(ctx);
+                varDecl += "ldc " + ctx.LITERAL().getText() + "\n"
+                        + "fstore_" + vId + "\n";
+            }
         }
-
         newTexts.put(ctx, varDecl);
     }
 
@@ -279,6 +284,8 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 String idName = ctx.IDENT().getText();
                 if (symbolTable.getVarType(idName) == Type.INT) {
                     expr += "iload_" + symbolTable.getVarId(idName) + " \n";
+                } else if(symbolTable.getVarType(idName) == Type.FLOAT){
+                    expr += "fload_" + symbolTable.getVarId(idName) + " \n";
                 }
                 //else	// Type int array => Later! skip now..
                 //	expr += "           lda " + symbolTable.get(ctx.IDENT().getText()).value + " \n";
@@ -298,7 +305,6 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
 
             } else {                                            // binary operation
                 expr = handleBinExpr(ctx, expr);
-
             }
         }
         // IDENT '(' args ')' |  IDENT '[' expr ']'
