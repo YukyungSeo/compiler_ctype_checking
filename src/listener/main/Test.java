@@ -9,8 +9,7 @@ public class Test {
     }
 
     public static void main(String[] var0) {
-        float x = 4;
-        float y = 3;
-        System.out.println(x+y);
+        double x = 4.4;
+        System.out.println(x+4);
     }
 }

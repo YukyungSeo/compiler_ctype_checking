@@ -1,10 +1,10 @@
-int add(int x, int y, int z) {
+float add(float x, float y, float z) {
 	return x + y + z;
 }
 
 void main () {
-    int x = 100;
-    int y = 111;
-    int z = 222;
+    float x = 4.5;
+    float y = 6.8;
+    float z = 2.2;
 	_print(add(x, y, z));
 }

@@ -6,6 +6,8 @@ import gen.MiniCParser.*;
 import org.antlr.v4.runtime.tree.ParseTreeListener;
 import org.antlr.v4.runtime.tree.ParseTreeProperty;
 
+import java.util.Stack;
+
 import static listener.main.BytecodeGenListenerHelper.*;
 import static listener.main.SymbolTable.Type;
 
@@ -269,6 +271,7 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
         newTexts.put(ctx, varDecl);
     }
 
+    Stack<Type> exprStack = new Stack<Type>();
 
     @Override
     public void exitExpr(ExprContext ctx) {
@@ -284,14 +287,21 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 String idName = ctx.IDENT().getText();
                 if (symbolTable.getVarType(idName) == Type.INT) {
                     expr += "iload_" + symbolTable.getVarId(idName) + " \n";
+                    exprStack.add(Type.INT);
                 } else if(symbolTable.getVarType(idName) == Type.FLOAT){
                     expr += "fload_" + symbolTable.getVarId(idName) + " \n";
+                    exprStack.add(Type.FLOAT);
                 }
                 //else	// Type int array => Later! skip now..
                 //	expr += "           lda " + symbolTable.get(ctx.IDENT().getText()).value + " \n";
             } else if (ctx.LITERAL() != null) {
                 String literalStr = ctx.LITERAL().getText();
                 expr += "ldc " + literalStr + " \n";
+                // 넣는 숫자가 float인가, int인가 확인
+                if(!literalStr.matches("."))
+                    exprStack.add(Type.INT);
+                else
+                    exprStack.add(Type.FLOAT);
             }
         } else if (ctx.getChildCount() == 2) { // UnaryOperation
             expr = handleUnaryExpr(ctx, expr);
@@ -367,100 +377,215 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
         expr += newTexts.get(ctx.expr(0));
         expr += newTexts.get(ctx.expr(1));
 
-        switch (ctx.getChild(1).getText()) {
-            case "*":
-                expr += "imul \n";
-                break;
-            case "/":
-                expr += "idiv \n";
-                break;
-            case "%":
-                expr += "irem \n";
-                break;
-            case "+":        // expr(0) expr(1) iadd
-                expr += "iadd \n";
-                break;
-            case "-":
-                expr += "isub \n";
-                break;
+        Type type = getBinExpressionType();
+        if(type.equals(Type.INT)) {
+            exprStack.add(Type.INT);
+            switch (ctx.getChild(1).getText()) {
+                case "*":
+                    expr += "imul \n";
+                    break;
+                case "/":
+                    expr += "idiv \n";
+                    break;
+                case "%":
+                    expr += "irem \n";
+                    break;
+                case "+":        // expr(0) expr(1) iadd
+                    expr += "iadd \n";
+                    break;
+                case "-":
+                    expr += "isub \n";
+                    break;
 
-            case "==":
-                expr += "isub " + "\n"              // 두값을 뺀 후
-                        + "ifeq " + l2 + "\n"       // 차이가 0(참)이라면 l2 label로 간다.
-                        + "ldc 0" + "\n"            // 차이가 0이 아니라면 0을
-                        + "goto " + lend + "\n"     // 반환한다.
-                        + l2 + ": " + "\n"
-                        + "ldc 1" + "\n"            // 차이가 0이라면 1을
-                        + lend + ": " + "\n";       // 반환한다.
-                break;
-            case "!=":
-                expr += "isub " + "\n"
-                        + "ifne " + l2 + "\n"
-                        + "ldc 0" + "\n"
-                        + "goto " + lend + "\n"
-                        + l2 + ": " + "\n"
-                        + "ldc 1" + "\n"
-                        + lend + ": " + "\n";
-                break;
-            case "<=":
-                // <(5) Fill here>
-                expr += "isub " + "\n"              // 두값을 뺀 후
-                        + "ifle " + l2 + "\n"       // 차이가 0보다 작거나 같다면(참) l2 label로 간다.
-                        + "ldc 0" + "\n"            // 차이가 0보다 크다면(거짓) 0을
-                        + "goto " + lend + "\n"     // 반환한다.
-                        + l2 + ": " + "\n"
-                        + "ldc 1" + "\n"            // 차이가 0보다 작거나 같다면(참) 1을
-                        + lend + ": " + "\n";       // 반환한다.
-                break;
-            case "<":
-                // <(6) Fill here>
-                expr += "isub " + "\n"
-                        + "iflt " + l2 + "\n"
-                        + "ldc 0" + "\n"
-                        + "goto " + lend + "\n"
-                        + l2 + ": " + "\n"
-                        + "ldc 1" + "\n"
-                        + lend + ": " + "\n";
-                break;
+                case "==":
+                    expr += "isub " + "\n"              // 두값을 뺀 후
+                            + "ifeq " + l2 + "\n"       // 차이가 0(참)이라면 l2 label로 간다.
+                            + "ldc 0" + "\n"            // 차이가 0이 아니라면 0을
+                            + "goto " + lend + "\n"     // 반환한다.
+                            + l2 + ": " + "\n"
+                            + "ldc 1" + "\n"            // 차이가 0이라면 1을
+                            + lend + ": " + "\n";       // 반환한다.
+                    break;
+                case "!=":
+                    expr += "isub " + "\n"
+                            + "ifne " + l2 + "\n"
+                            + "ldc 0" + "\n"
+                            + "goto " + lend + "\n"
+                            + l2 + ": " + "\n"
+                            + "ldc 1" + "\n"
+                            + lend + ": " + "\n";
+                    break;
+                case "<=":
+                    // <(5) Fill here>
+                    expr += "isub " + "\n"              // 두값을 뺀 후
+                            + "ifle " + l2 + "\n"       // 차이가 0보다 작거나 같다면(참) l2 label로 간다.
+                            + "ldc 0" + "\n"            // 차이가 0보다 크다면(거짓) 0을
+                            + "goto " + lend + "\n"     // 반환한다.
+                            + l2 + ": " + "\n"
+                            + "ldc 1" + "\n"            // 차이가 0보다 작거나 같다면(참) 1을
+                            + lend + ": " + "\n";       // 반환한다.
+                    break;
+                case "<":
+                    // <(6) Fill here>
+                    expr += "isub " + "\n"
+                            + "iflt " + l2 + "\n"
+                            + "ldc 0" + "\n"
+                            + "goto " + lend + "\n"
+                            + l2 + ": " + "\n"
+                            + "ldc 1" + "\n"
+                            + lend + ": " + "\n";
+                    break;
 
-            case ">=":
-                // <(7) Fill here>
-                expr += "isub " + "\n"
-                        + "ifge " + l2 + "\n"
-                        + "ldc 0" + "\n"
-                        + "goto " + lend + "\n"
-                        + l2 + ": " + "\n"
-                        + "ldc 1" + "\n"
-                        + lend + ": " + "\n";
-                break;
+                case ">=":
+                    // <(7) Fill here>
+                    expr += "isub " + "\n"
+                            + "ifge " + l2 + "\n"
+                            + "ldc 0" + "\n"
+                            + "goto " + lend + "\n"
+                            + l2 + ": " + "\n"
+                            + "ldc 1" + "\n"
+                            + lend + ": " + "\n";
+                    break;
 
-            case ">":
-                // <(8) Fill here>
-                expr += "isub " + "\n"
-                        + "ifgt " + l2 + "\n"
-                        + "ldc 0" + "\n"
-                        + "goto " + lend + "\n"
-                        + l2 + ": " + "\n"
-                        + "ldc 1" + "\n"
-                        + lend + ": " + "\n";
-                break;
+                case ">":
+                    // <(8) Fill here>
+                    expr += "isub " + "\n"
+                            + "ifgt " + l2 + "\n"
+                            + "ldc 0" + "\n"
+                            + "goto " + lend + "\n"
+                            + l2 + ": " + "\n"
+                            + "ldc 1" + "\n"
+                            + lend + ": " + "\n";
+                    break;
 
-            case "and":
-                expr += "ifne " + lend + "\n"
-                        + "pop" + "\n"
-                        + "ldc 0" + "\n"
-                        + lend + ": " + "\n";
-                break;
-            case "or":
-                // <(9) Fill here>
-                expr += "ifeq " + lend + "\n"
-                        + "pop" + "\n"
-                        + "ldc 0" + "\n"
-                        + lend + ": " + "\n";
-                break;
+                case "and":
+                    expr += "ifne " + lend + "\n"
+                            + "pop" + "\n"
+                            + "ldc 0" + "\n"
+                            + lend + ": " + "\n";
+                    break;
+                case "or":
+                    // <(9) Fill here>
+                    expr += "ifeq " + lend + "\n"
+                            + "pop" + "\n"
+                            + "ldc 0" + "\n"
+                            + lend + ": " + "\n";
+                    break;
 
+            }
+        } else if(type.equals(Type.FLOAT)) {
+            exprStack.add(Type.FLOAT);
+            switch (ctx.getChild(1).getText()) {
+                case "*":
+                    expr += "fmul \n";
+                    break;
+                case "/":
+                    expr += "fdiv \n";
+                    break;
+                case "%":
+                    expr += "frem \n";
+                    break;
+                case "+":        // expr(0) expr(1) fadd
+                    expr += "fadd \n";
+                    break;
+                case "-":
+                    expr += "fsub \n";
+                    break;
+
+                case "==":
+                    expr += "fsub " + "\n"              // 두값을 뺀 후
+                            + "ifeq " + l2 + "\n"       // 차이가 0(참)이라면 l2 label로 간다.
+                            + "ldc 0" + "\n"            // 차이가 0이 아니라면 0을
+                            + "goto " + lend + "\n"     // 반환한다.
+                            + l2 + ": " + "\n"
+                            + "ldc 1" + "\n"            // 차이가 0이라면 1을
+                            + lend + ": " + "\n";       // 반환한다.
+                    break;
+                case "!=":
+                    expr += "fsub " + "\n"
+                            + "ifne " + l2 + "\n"
+                            + "ldc 0" + "\n"
+                            + "goto " + lend + "\n"
+                            + l2 + ": " + "\n"
+                            + "ldc 1" + "\n"
+                            + lend + ": " + "\n";
+                    break;
+                case "<=":
+                    // <(5) Fill here>
+                    expr += "fsub " + "\n"              // 두값을 뺀 후
+                            + "ifle " + l2 + "\n"       // 차이가 0보다 작거나 같다면(참) l2 label로 간다.
+                            + "ldc 0" + "\n"            // 차이가 0보다 크다면(거짓) 0을
+                            + "goto " + lend + "\n"     // 반환한다.
+                            + l2 + ": " + "\n"
+                            + "ldc 1" + "\n"            // 차이가 0보다 작거나 같다면(참) 1을
+                            + lend + ": " + "\n";       // 반환한다.
+                    break;
+                case "<":
+                    // <(6) Fill here>
+                    expr += "fsub " + "\n"
+                            + "iflt " + l2 + "\n"
+                            + "ldc 0" + "\n"
+                            + "goto " + lend + "\n"
+                            + l2 + ": " + "\n"
+                            + "ldc 1" + "\n"
+                            + lend + ": " + "\n";
+                    break;
+
+                case ">=":
+                    // <(7) Fill here>
+                    expr += "fsub " + "\n"
+                            + "ifge " + l2 + "\n"
+                            + "ldc 0" + "\n"
+                            + "goto " + lend + "\n"
+                            + l2 + ": " + "\n"
+                            + "ldc 1" + "\n"
+                            + lend + ": " + "\n";
+                    break;
+
+                case ">":
+                    // <(8) Fill here>
+                    expr += "fsub " + "\n"
+                            + "ifgt " + l2 + "\n"
+                            + "ldc 0" + "\n"
+                            + "goto " + lend + "\n"
+                            + l2 + ": " + "\n"
+                            + "ldc 1" + "\n"
+                            + lend + ": " + "\n";
+                    break;
+
+                case "and":
+                    expr += "ifne " + lend + "\n"
+                            + "pop" + "\n"
+                            + "ldc 0" + "\n"
+                            + lend + ": " + "\n";
+                    break;
+                case "or":
+                    // <(9) Fill here>
+                    expr += "ifeq " + lend + "\n"
+                            + "pop" + "\n"
+                            + "ldc 0" + "\n"
+                            + lend + ": " + "\n";
+                    break;
+
+            }
         }
         return expr;
+    }
+
+    private Type getBinExpressionType() {
+        // stack에 마지막에 들어간 2개를 팝하여
+        // 2개의 type을 살펴
+        // 어떤 type 연산을 할 것인지 결정한다.
+        Type t1 = exprStack.pop();
+        Type t2 = exprStack.pop();
+
+        if(t1.equals(Type.INT) && t2.equals(Type.INT)){
+            return Type.INT;
+        } else if(t1.equals(Type.FLOAT) || t2.equals(Type.FLOAT)){
+            // int float 연산일 경우 int를 float으로 타입변환하는 것이 필요
+            return Type.FLOAT;
+        }
+        return Type.ERROR;
     }
 
     private String handleFunCall(ExprContext ctx, String expr) {
