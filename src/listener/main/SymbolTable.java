@@ -54,6 +54,7 @@ public class SymbolTable {
 	
 	static public class FInfo {
 		public String sigStr;
+		public Type[] paramsT;
 	}
 	
 	private Map<String, VarINTInfo> _lintsymtable = new HashMap<>();	// local v. int
@@ -168,10 +169,12 @@ public class SymbolTable {
 	
 	private void initFunTable() {
 		FInfo printlninfo = new FInfo();
-		printlninfo.sigStr = "java/io/PrintStream/println(I)V";
+		printlninfo.sigStr = "java/io/PrintStream/println";
 		
 		FInfo maininfo = new FInfo();
 		maininfo.sigStr = "main([Ljava/lang/String;)V";
+		maininfo.paramsT = new Type[1];
+		maininfo.paramsT[0] = Type.VOID;
 		_fsymtable.put("_print", printlninfo);
 		_fsymtable.put("main", maininfo);
 	}
@@ -182,6 +185,11 @@ public class SymbolTable {
         return fInfo.sigStr;
 	}
 
+	public FInfo getFunSpec(String fname) {
+		// <Fill here>
+		return _fsymtable.get(fname);
+	}
+
 	public String getFunSpecStr(Fun_declContext ctx) {
 		// <Fill here>
         FInfo fInfo = _fsymtable.get(ctx.IDENT().getText());
@@ -189,6 +197,8 @@ public class SymbolTable {
 	}
 	
 	public String putFunSpecStr(Fun_declContext ctx) {
+		FInfo finfo = new FInfo();
+
 		String fname = getFunName(ctx);	// 함수 이름
 		String argtype = getParamTypesText((ParamsContext) ctx.getChild(3));	// 매개변수들 type 정리
 		String rtype = getTypeText((Type_specContext) ctx.getChild(0));	// return type 정리
@@ -197,8 +207,10 @@ public class SymbolTable {
 		// <Fill here>	
 		
 		res +=  fname + "(" + argtype + ")" + rtype;
-		
-		FInfo finfo = new FInfo();
+		finfo.paramsT = new Type[argtype.length()];
+		for(int i=0; i<argtype.length(); i++){
+			finfo.paramsT[i] = argtype.charAt(i) == 'I' ? Type.INT : Type.FLOAT;
+		}
 		finfo.sigStr = res;
 		_fsymtable.put(fname, finfo);
 		

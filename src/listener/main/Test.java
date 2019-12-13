@@ -10,6 +10,7 @@ public class Test {
 
     public static void main(String[] var0) {
         double x = 4.4;
-        System.out.println(x+4);
+        x++;
+        System.out.println(x);
     }
 }
