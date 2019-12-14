@@ -55,6 +55,7 @@ public class SymbolTable {
 	static public class FInfo {
 		public String sigStr;
 		public Type[] paramsT;
+		public Type returnT;
 	}
 	
 	private Map<String, VarINTInfo> _lintsymtable = new HashMap<>();	// local v. int
@@ -175,6 +176,7 @@ public class SymbolTable {
 		maininfo.sigStr = "main([Ljava/lang/String;)V";
 		maininfo.paramsT = new Type[1];
 		maininfo.paramsT[0] = Type.VOID;
+		maininfo.returnT = Type.VOID;
 		_fsymtable.put("_print", printlninfo);
 		_fsymtable.put("main", maininfo);
 	}
@@ -212,6 +214,7 @@ public class SymbolTable {
 			finfo.paramsT[i] = argtype.charAt(i) == 'I' ? Type.INT : Type.FLOAT;
 		}
 		finfo.sigStr = res;
+		finfo.returnT = rtype.equals("I")? Type.INT : Type.FLOAT;
 		_fsymtable.put(fname, finfo);
 		
 		return res;

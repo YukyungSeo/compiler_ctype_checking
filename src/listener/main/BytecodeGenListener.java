@@ -212,7 +212,12 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
             newTexts.put(ctx, "return" + "\n");
         } else {
             stmt += newTexts.get(ctx.expr());
-            stmt += "ireturn" + "\n";       //int만 고려하므로 ireturn을 넣어준다.
+            Type type = exprStack.pop();
+            if(type.equals(Type.INT)) {
+                stmt += "ireturn" + "\n";       //int
+            } else if(type.equals(Type.FLOAT)){
+                stmt += "freturn" + "\n";
+            }
         }
         newTexts.put(ctx, stmt);
     }
@@ -524,9 +529,15 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
         } else {
             expr = newTexts.get(ctx.args())
                     + "invokestatic " + getCurrentClassName() + "/" + symbolTable.getFunSpecStr(fname) + "\n";
+            // 매개변수는 다 pop하고
             int paramC = symbolTable.getFunSpec(fname).paramsT.length;
             for(int i=0; i<paramC; i++)
                 exprStack.pop();
+            // return 은 넣어준다.
+            Type rtype = symbolTable.getFunSpec(fname).returnT;
+            if(!rtype.equals(Type.ERROR))
+                exprStack.add(rtype);
+
         }
 
         return expr;
