@@ -366,11 +366,17 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 // array 변수 호출
                 String idName = ctx.IDENT().getText();
                 if (symbolTable.getVarType(idName) == Type.INTARRAY) {
-                    expr += "aload_" + symbolTable.getVarId(idName) + "\n"
-                            + newTexts.get(ctx.expr(0))
-                            + "iaload" + "\n";
                     // expr 1개 pop
-                    exprStack.pop();
+                    Type indextype = exprStack.pop();
+                    if(indextype.equals(Type.INT)) {
+                        expr += "aload_" + symbolTable.getVarId(idName) + "\n"
+                                + newTexts.get(ctx.expr(0))
+                                + "iaload" + "\n";
+                    } else {
+                        // int[] index에 float을 넣을 경우 error
+                        Compilable = false;
+                        System.out.println(String.format("Error : Line %d : float cannot be index of array", ctx.start.getLine()));
+                    }
                     // return int add
                     exprStack.add(Type.INT); // int array에서 load하는 것은 int이다.
                 }
@@ -381,13 +387,25 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
             // array 변수 선언
             String idName = ctx.IDENT().getText();
              if (symbolTable.getVarType(idName) == Type.INTARRAY) {
-                expr += "aload_" + symbolTable.getVarId(idName) + "\n"
-                    + newTexts.get(ctx.expr(0))
-                    + newTexts.get(ctx.expr(1))
-                    + "iastore" + "\n";
                 // expr 2개 pop해줌
-                exprStack.pop();
-                exprStack.pop();
+                Type valueType = exprStack.pop();
+                Type indexType = exprStack.pop();
+                if(indexType.equals(Type.INT)) {
+                    if(valueType.equals(Type.INT)) {
+                        expr += "aload_" + symbolTable.getVarId(idName) + "\n"
+                                + newTexts.get(ctx.expr(0))
+                                + newTexts.get(ctx.expr(1))
+                                + "iastore" + "\n";
+                    } else {
+                        // int[]에 float을 넣을 경우 error
+                        Compilable = false;
+                        System.out.println(String.format("Error : Line %d : Cannot cast from float to int", ctx.start.getLine()));
+                    }
+                } else {
+                    // int[] index에 float을 넣을 경우 error
+                    Compilable = false;
+                    System.out.println(String.format("Error : Line %d : float cannot be index of array", ctx.start.getLine()));
+                }
             }
         }
         newTexts.put(ctx, expr);
