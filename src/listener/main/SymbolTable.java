@@ -13,28 +13,31 @@ import static listener.main.BytecodeGenListenerHelper.*;
 
 public class SymbolTable {
 	enum Type {
-		INT, INTARRAY, VOID, ERROR
+		INT, FLOAT, INTARRAY, VOID, ERROR
 	}
 	
 	static public class VarInfo {
 		Type type; 
 		int id;
-		int initVal;
+		String initVal;
 		
-		public VarInfo(Type type,  int id, int initVal) {
+		public VarInfo(Type type,  int id, String initVal) {
 			this.type = type;
 			this.id = id;
 			this.initVal = initVal;
 		}
+
 		public VarInfo(Type type,  int id) {
 			this.type = type;
 			this.id = id;
-			this.initVal = 0;
+			this.initVal = "";
 		}
 	}
 	
 	static public class FInfo {
 		public String sigStr;
+		public Type[] paramsT;
+		public Type returnT;
 	}
 	
 	private Map<String, VarInfo> _lsymtable = new HashMap<>();	// local v.
@@ -71,13 +74,27 @@ public class SymbolTable {
 		_gsymtable.put(varname, vinfo);
 	}
 	
-	void putLocalVarWithInitVal(String varname, Type type, int initVar){
+	void putLocalVarWithInitVal(String varname, Type type, String initVar){
 		//<Fill here>
+//		VarInfo vinfo = null;
+//		if(type.equals(Type.INT)) {
+//			vinfo = new VarInfo(type, _localVarID++, Integer.parseInt(initVar));
+//		} else if(type.equals(Type.FLOAT)) {
+//			vinfo = new VarInfo(type, _localVarID++, Float.parseFloat(initVar));
+//		}
+//		_lsymtable.put(varname, vinfo);
 		VarInfo vinfo = new VarInfo(type, _localVarID++, initVar);
 		_lsymtable.put(varname, vinfo);
 	}
-	void putGlobalVarWithInitVal(String varname, Type type, int initVar){
+	void putGlobalVarWithInitVal(String varname, Type type, String initVar){
 		//<Fill here>
+//		if(type.equals(Type.INT)) {
+//			VarINTInfo vinfo = new VarINTInfo(type, _globalintVarID++, Integer.parseInt(initVar));
+//			_gintsymtable.put(varname, vinfo);
+//		} else if(type.equals(Type.FLOAT)) {
+//			VarFLOATInfo vinfo = new VarFLOATInfo(type, _globalfloatVarID++, Float.parseFloat(initVar));
+//			_gfloatsymtable.put(varname, vinfo);
+//		}
 		VarInfo vinfo = new VarInfo(type, _globalVarID++, initVar);
 		_gsymtable.put(varname, vinfo);
 	}
@@ -90,29 +107,46 @@ public class SymbolTable {
 			String typestr = params.param(i).getChild(0).getText();
 			if (typestr.equals("int")) {
 				type = Type.INT;
+			} else if(typestr.equals("float")){
+				type = Type.FLOAT;
 			} else if (typestr.equals("void")) {
 				type = Type.VOID;
 			}
 
 			// param의 정보를 VarInfo로 만들어 _lsystable에 저장
-			VarInfo vinfo;
-			String varName = params.param(i).getChild(1).getText();
-			if (params.param(i).getChildCount() == 2) {
-				vinfo = new VarInfo(type, _localVarID++);
-			} else {	// int x = 0... 이럴 경우는 없음
-				int initval = Integer.parseInt(params.param(i).getChild(3).getText());
-				vinfo = new VarInfo(type, _localVarID++, initval);
-			}
-			_lsymtable.put(varName, vinfo);
+			String varname = params.param(i).getChild(1).getText();
+			VarInfo vinfo = new VarInfo(type, _localVarID++);
+			_lsymtable.put(varname, vinfo);
+
+//			String varname = params.param(i).getChild(1).getText();
+//			if(type.equals(Type.INT)) {
+//				VarINTInfo vinfo = new VarINTInfo(type, _localintVarID++);
+//				_lintsymtable.put(varname, vinfo);
+//			} else if(type.equals(Type.FLOAT)) {
+//				VarFLOATInfo vinfo = new VarFLOATInfo(type, _localfloatVarID++);
+//				_lfloatsymtable.put(varname, vinfo);
+//			}
+
+//			if (params.param(i).getChildCount() == 2) {
+//				vinfo = new VarInfo(type, _localVarID++);
+//			} else {	// int x = 0... 이럴 경우는 없음
+////				int initval = Integer.parseInt(params.param(i).getChild(3).getText());
+//				String initval = params.param(i).getChild(3).getText();
+//				vinfo = new VarInfo(type, _localVarID++, initval);
+//			}
+//			_lsymtable.put(varName, vinfo);
 		}
 	}
 	
 	private void initFunTable() {
 		FInfo printlninfo = new FInfo();
-		printlninfo.sigStr = "java/io/PrintStream/println(I)V";
+		printlninfo.sigStr = "java/io/PrintStream/println";
 		
 		FInfo maininfo = new FInfo();
 		maininfo.sigStr = "main([Ljava/lang/String;)V";
+		maininfo.paramsT = new Type[1];
+		maininfo.paramsT[0] = Type.VOID;
+		maininfo.returnT = Type.VOID;
 		_fsymtable.put("_print", printlninfo);
 		_fsymtable.put("main", maininfo);
 	}
@@ -123,6 +157,11 @@ public class SymbolTable {
         return fInfo.sigStr;
 	}
 
+	public FInfo getFunSpec(String fname) {
+		// <Fill here>
+		return _fsymtable.get(fname);
+	}
+
 	public String getFunSpecStr(Fun_declContext ctx) {
 		// <Fill here>
         FInfo fInfo = _fsymtable.get(ctx.IDENT().getText());
@@ -130,6 +169,8 @@ public class SymbolTable {
 	}
 	
 	public String putFunSpecStr(Fun_declContext ctx) {
+		FInfo finfo = new FInfo();
+
 		String fname = getFunName(ctx);	// 함수 이름
 		String argtype = getParamTypesText((ParamsContext) ctx.getChild(3));	// 매개변수들 type 정리
 		String rtype = getTypeText((Type_specContext) ctx.getChild(0));	// return type 정리
@@ -138,9 +179,12 @@ public class SymbolTable {
 		// <Fill here>	
 		
 		res +=  fname + "(" + argtype + ")" + rtype;
-		
-		FInfo finfo = new FInfo();
+		finfo.paramsT = new Type[argtype.length()];
+		for(int i=0; i<argtype.length(); i++){
+			finfo.paramsT[i] = argtype.charAt(i) == 'I' ? Type.INT : Type.FLOAT;
+		}
 		finfo.sigStr = res;
+		finfo.returnT = rtype.equals("I")? Type.INT : Type.FLOAT;
 		_fsymtable.put(fname, finfo);
 		
 		return res;
@@ -149,31 +193,32 @@ public class SymbolTable {
 	String getVarId(String name){
 		// <Fill here>
 		// local 변수 부터 찾기
-		VarInfo lvar = (VarInfo) _lsymtable.get(name);
-		if (lvar != null) {
-			return lvar.id +"";
+		VarInfo livar = (VarInfo) _lsymtable.get(name);
+		if (livar != null) {
+			return livar.id +"";
 		}
 
 		// 없으면, global 변수 찾기
-		VarInfo gvar = (VarInfo) _gsymtable.get(name);
-		if (gvar != null) {
-			return gvar.id +"";
+		VarInfo givar = (VarInfo) _gsymtable.get(name);
+		if (givar != null) {
+			return givar.id +"";
 		}
+
 
 		return "error";
 	}
 	
 	Type getVarType(String name){
-		VarInfo lvar = (VarInfo) _lsymtable.get(name);
-		if (lvar != null) {
-			return lvar.type;
+		VarInfo livar = (VarInfo) _lsymtable.get(name);
+		if (livar != null) {
+			return livar.type;
 		}
 		
-		VarInfo gvar = (VarInfo) _gsymtable.get(name);
-		if (gvar != null) {
-			return gvar.type;
+		VarInfo givar = (VarInfo) _gsymtable.get(name);
+		if (givar != null) {
+			return givar.type;
 		}
-		
+
 		return Type.ERROR;	
 	}
 	String newLabel() {

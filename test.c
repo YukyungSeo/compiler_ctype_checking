@@ -1,14 +1,11 @@
-int sum(int x) {
-	int sum = 0;
-	int i = 0;
-	while (i < x) {
-	    ++i;
-	    sum = sum + i;
-	}
-	return sum;
+float divide(int x, int y) {
+    return x / y;
 }
 
 void main () {
-    int x = 100;
-	_print(sum(x));
+    int x = 4;
+    float y = 1.5;
+    float z;
+    z = x * y;
+    _print(divide(x, z));
 }

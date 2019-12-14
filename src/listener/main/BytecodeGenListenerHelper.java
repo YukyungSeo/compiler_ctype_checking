@@ -4,8 +4,6 @@ import java.util.Hashtable;
 
 import gen.*;
 import gen.MiniCParser.*;
-import listener.main.SymbolTable;
-import listener.main.SymbolTable.VarInfo;
 
 public class BytecodeGenListenerHelper {
 	
@@ -21,8 +19,9 @@ public class BytecodeGenListenerHelper {
 	}
 	
 	// global vars
-	static int initVal(Var_declContext ctx) {
-		return Integer.parseInt(ctx.LITERAL().getText());
+	static String initVal(Var_declContext ctx) {
+//		return Integer.parseInt(ctx.LITERAL().getText());
+		return ctx.LITERAL().getText();
 	}
 
 	// var_decl	: type_spec IDENT '=' LITERAL ';
@@ -36,8 +35,9 @@ public class BytecodeGenListenerHelper {
 
 	// <local vars>
 	// local_decl	: type_spec IDENT '[' LITERAL ']' ';'
-	static int initVal(Local_declContext ctx) {
-		return Integer.parseInt(ctx.LITERAL().getText());
+	static String initVal(Local_declContext ctx) {
+//		return Integer.parseInt(ctx.LITERAL().getText());
+		return ctx.LITERAL().getText();
 	}
 
 	static boolean isArrayDecl(Local_declContext ctx) {
@@ -78,11 +78,31 @@ public class BytecodeGenListenerHelper {
 
 		if(str.equals("int")){
 			rst += "I";
+		} else if (str.equals("float")){
+			rst = "F";
 		} else if (str.equals("void")){
 			rst = "V";
 		}
 		return rst;
 	}
+
+	static SymbolTable.Type getType(Type_specContext ctx){
+		if(ctx.getText().equals("int")){
+			return SymbolTable.Type.INT;
+		} else if(ctx.getText().equals("float")){
+			return SymbolTable.Type.FLOAT;
+		}
+		return SymbolTable.Type.ERROR;
+	}
+
+//	static SymbolTable.Type getType(ExprContext ctx){
+//		if(ctx.getText().equals("int")){
+//			return SymbolTable.Type.INT;
+//		} else if(ctx.getText().equals("float")){
+//			return SymbolTable.Type.FLOAT;
+//		}
+//		return SymbolTable.Type.ERROR;
+//	}
 
 	// params
 	static String getParamName(ParamContext param) {
