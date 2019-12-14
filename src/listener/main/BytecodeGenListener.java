@@ -17,6 +17,7 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
 
     int tab = 0;
     int label = 0;
+    boolean Compilable = true;
 
     // program	: decl+
 
@@ -84,9 +85,11 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
 
         newTexts.put(ctx, classProlog + var_decl + fun_decl);
 
-        System.out.println(newTexts.get(ctx));
-        FileOutput fileOutput = new FileOutput();
-        fileOutput.fileWrite("./Test.j", newTexts.get(ctx));
+        if(Compilable) {
+            System.out.println(newTexts.get(ctx));
+            FileOutput fileOutput = new FileOutput();
+            fileOutput.fileWrite("./Test.j", newTexts.get(ctx));
+        }
     }
 
 
@@ -265,8 +268,15 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
         if (isDeclWithInit(ctx)) {
             if (getType(ctx.type_spec()).equals(Type.INT)) {
                 String vId = symbolTable.getVarId(ctx);
-                varDecl += "ldc " + ctx.LITERAL().getText() + "\n"
-                        + "istore_" + vId + "\n";
+
+                if(!ctx.LITERAL().getText().contains(".")) {
+                    varDecl += "ldc " + ctx.LITERAL().getText() + "\n"
+                            + "istore_" + vId + "\n";
+                } else {
+                    // int에 float을 넣을 경우 error
+                    System.out.println(String.format("Error : Line %d : Cannot cast from float to int", ctx.start.getLine()));
+                    Compilable = false;
+                }
             } else if (getType(ctx.type_spec()).equals(Type.FLOAT)) {
                 String vId = symbolTable.getVarId(ctx);
                 varDecl += "ldc " + ctx.LITERAL().getText() + "\n"

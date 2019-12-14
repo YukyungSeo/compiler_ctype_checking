@@ -1,10 +1,15 @@
-float add(float x, float y, float z) {
-	return x + y + z;
+int sum(int x) {
+    int result = 0;
+    int i = 0;
+    while (i < x) {
+        ++i;
+        result = result + i;
+    }
+
+    return result;
 }
 
 void main () {
     float x = 4.5;
-    int y = 6;
-    float z = 2.2;
-	_print(add(x, y, z));
+    _print(sum(x));
 }
