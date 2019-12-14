@@ -274,8 +274,8 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                             + "istore_" + vId + "\n";
                 } else {
                     // int에 float을 넣을 경우 error
-                    System.out.println(String.format("Error : Line %d : Cannot cast from float to int", ctx.start.getLine()));
                     Compilable = false;
+                    System.out.println(String.format("Error : Line %d : Cannot cast from float to int", ctx.start.getLine()));
                 }
             } else if (getType(ctx.type_spec()).equals(Type.FLOAT)) {
                 String vId = symbolTable.getVarId(ctx);
@@ -539,11 +539,18 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
         } else {
             expr = newTexts.get(ctx.args())
                     + "invokestatic " + getCurrentClassName() + "/" + symbolTable.getFunSpecStr(fname) + "\n";
-            // 매개변수는 다 pop하고
-            int paramC = symbolTable.getFunSpec(fname).paramsT.length;
-            for(int i=0; i<paramC; i++)
-                exprStack.pop();
-            // return 은 넣어준다.
+            // 매개변수를 stack에서 pop하면서
+            // 함수와 매개변수들 간의 type이 맞는지 확인한다.
+            // int에 float을 넣으면 error가 뜨도록 한다.
+            Type[] paramType = symbolTable.getFunSpec(fname).paramsT;
+            for(int i=0; i<paramType.length; i++) {
+                Type type = exprStack.pop();
+                if(!paramType[i].equals(type)){
+                    Compilable = false;
+                    System.out.println(String.format("Error : Line %d : Cannot cast from float to int", ctx.start.getLine()));
+                }
+            }
+            // return할 type을 stack에 넣어준다.
             Type rtype = symbolTable.getFunSpec(fname).returnT;
             if(!rtype.equals(Type.ERROR))
                 exprStack.add(rtype);
