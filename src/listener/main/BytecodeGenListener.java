@@ -60,7 +60,7 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
         } else if (isDeclWithInit(ctx)) {
             symbolTable.putLocalVarWithInitVal(getLocalVarName(ctx), getType(ctx.type_spec()), initVal(ctx));
         } else { // simple decl
-            symbolTable.putLocalVar(getLocalVarName(ctx), Type.INT);
+            symbolTable.putLocalVar(getLocalVarName(ctx), getType(ctx.type_spec()));
         }
     }
 
@@ -545,7 +545,7 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
             Type[] paramType = symbolTable.getFunSpec(fname).paramsT;
             for(int i=0; i<paramType.length; i++) {
                 Type type = exprStack.pop();
-                if(!paramType[i].equals(type)){
+                if(paramType[i].equals(Type.INT) && type.equals(Type.FLOAT)){
                     Compilable = false;
                     System.out.println(String.format("Error : Line %d : Cannot cast from float to int", ctx.start.getLine()));
                 }
