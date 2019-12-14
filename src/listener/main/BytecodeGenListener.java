@@ -537,9 +537,7 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
             Type rtype = symbolTable.getFunSpec(fname).returnT;
             if(!rtype.equals(Type.ERROR))
                 exprStack.add(rtype);
-
         }
-
         return expr;
     }
 

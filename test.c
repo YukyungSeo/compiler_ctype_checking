@@ -4,7 +4,7 @@ float add(float x, float y, float z) {
 
 void main () {
     float x = 4.5;
-    float y = 6.8;
+    int y = 6;
     float z = 2.2;
 	_print(add(x, y, z));
 }
