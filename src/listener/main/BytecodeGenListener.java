@@ -324,6 +324,9 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 } else if (symbolTable.getVarType(idName) == Type.FLOAT) {
                     expr += "fload_" + symbolTable.getVarId(idName) + " \n";
                     exprStack.add(Type.FLOAT);
+                } else if (symbolTable.getVarType(idName) == Type.INTARRAY) {
+                    expr += "aload_" + symbolTable.getVarId(idName) + " \n";
+                    exprStack.add(Type.INTARRAY);
                 }
                 //else	// Type int array => Later! skip now..
                 //	expr += "           lda " + symbolTable.get(ctx.IDENT().getText()).value + " \n";

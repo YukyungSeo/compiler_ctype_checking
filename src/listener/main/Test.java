@@ -8,8 +8,14 @@ public class Test {
     public Test() {
     }
 
+    public static void multi(int a[], int b){
+        System.out.println(a[0] + a[1] + b);
+    }
+
     public static void main(String[] var0) {
-        int[] var1 = new int[]{1, 2, 0, 0, 0};
-        System.out.println(var1[0] + var1[1]);
+        int arr[] = new int[5];
+        arr[0] = 100;
+        arr[1] = 200;
+        multi(arr, 1);
     }
 }

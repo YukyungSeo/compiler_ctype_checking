@@ -86,6 +86,21 @@ public class BytecodeGenListenerHelper {
 		return rst;
 	}
 
+	static String getArrTypeText(Type_specContext typespec) {
+		// <Fill in>
+		String str = typespec.getChild(0).getText();
+		String rst = "";
+
+		if(str.equals("int")){
+			rst += "[I";
+		} else if (str.equals("float")){
+			rst = "[F";
+		} else if (str.equals("void")){
+			rst = "V";
+		}
+		return rst;
+	}
+
 	static SymbolTable.Type getType(Type_specContext ctx){
 		if(ctx.getText().equals("int"))
 			return SymbolTable.Type.INT;
@@ -104,16 +119,6 @@ public class BytecodeGenListenerHelper {
 		return SymbolTable.Type.ERROR;
 	}
 
-
-//	static SymbolTable.Type getType(ExprContext ctx){
-//		if(ctx.getText().equals("int")){
-//			return SymbolTable.Type.INT;
-//		} else if(ctx.getText().equals("float")){
-//			return SymbolTable.Type.FLOAT;
-//		}
-//		return SymbolTable.Type.ERROR;
-//	}
-
 	// params
 	static String getParamName(ParamContext param) {
 		// <Fill in>
@@ -122,10 +127,14 @@ public class BytecodeGenListenerHelper {
 	
 	static String getParamTypesText(ParamsContext params) {
 		String typeText = "";
-		
+
 		for(int i = 0; i < params.param().size(); i++) {
-			MiniCParser.Type_specContext typespec = (MiniCParser.Type_specContext)  params.param(i).getChild(0);
-			typeText += getTypeText(typespec); // + ";";
+			ParamContext param = params.param(i);
+			Type_specContext typespec = (Type_specContext) param.getChild(0);
+			if(param.getChildCount() == 2)
+				typeText += getTypeText(typespec); // + ";";
+			else
+				typeText += getArrTypeText(typespec); // + ";";
 		}
 		return typeText;
 	}
