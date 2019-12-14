@@ -1,10 +1,9 @@
-void multi(int a[], int b){
-    _print(a[0] + a[1] + b);
+float add(float x, float y) {
+    return x + y;
 }
 
 void main () {
-    int arr[5];
-    arr[0] = 100;
-    arr[1] = 200;
-    multi(arr, 1);
+    int a = 1;
+    float b = 2.4;
+    _print(add(a, b));
 }
