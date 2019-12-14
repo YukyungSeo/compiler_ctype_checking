@@ -1,11 +1,6 @@
-float divide(int x, int y) {
-    return x / y;
-}
-
 void main () {
-    int x = 4;
-    float y = 1.5;
-    float z;
-    z = x * y;
-    _print(divide(x, z));
+    int arr[5];
+    arr[0] = 1;
+    arr[1] = 2;
+    _print(arr[0] + arr[1]);
 }

@@ -13,7 +13,7 @@ import static listener.main.BytecodeGenListenerHelper.*;
 
 public class SymbolTable {
 	enum Type {
-		INT, FLOAT, INTARRAY, VOID, ERROR
+		INT, FLOAT, INTARRAY, FLOATARRAY, VOID, ERROR
 	}
 	
 	static public class VarInfo {

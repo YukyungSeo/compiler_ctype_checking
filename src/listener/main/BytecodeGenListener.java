@@ -56,7 +56,7 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
     @Override
     public void enterLocal_decl(Local_declContext ctx) {
         if (isArrayDecl(ctx)) {
-            symbolTable.putLocalVar(getLocalVarName(ctx), Type.INTARRAY);
+            symbolTable.putLocalVar(getLocalVarName(ctx), getArrType(ctx.type_spec()));
         } else if (isDeclWithInit(ctx)) {
             symbolTable.putLocalVarWithInitVal(getLocalVarName(ctx), getType(ctx.type_spec()), initVal(ctx));
         } else { // simple decl
@@ -282,6 +282,24 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 varDecl += "ldc " + ctx.LITERAL().getText() + "\n"
                         + "fstore_" + vId + "\n";
             }
+        } else if(isArrayDecl(ctx)){
+            if (getType(ctx.type_spec()).equals(Type.INT)) {
+                String vId = symbolTable.getVarId(ctx);
+
+                if(!ctx.LITERAL().getText().contains(".")) {
+                    varDecl += "ldc " + ctx.LITERAL().getText() + "\n"
+                            + "newarray int" + "\n"
+                            + "astore_" + vId + "\n";
+                } else {
+                    // int[] index에 float을 넣을 경우 error
+                    Compilable = false;
+                    System.out.println(String.format("Error : Line %d : float cannot be index of array", ctx.start.getLine()));
+                }
+            } else if (getType(ctx.type_spec()).equals(Type.FLOAT)) {
+                String vId = symbolTable.getVarId(ctx);
+                varDecl += "ldc " + ctx.LITERAL().getText() + "\n"
+                        + "fstore_" + vId + "\n";
+            }
         }
         newTexts.put(ctx, varDecl);
     }
@@ -313,10 +331,11 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 String literalStr = ctx.LITERAL().getText();
                 expr += "ldc " + literalStr + " \n";
                 // 넣는 숫자가 float인가, int인가 확인
-                if (!literalStr.matches("."))
+                if (!literalStr.contains("."))
                     exprStack.add(Type.INT);
                 else
                     exprStack.add(Type.FLOAT);
+
             }
         } else if (ctx.getChildCount() == 2) { // UnaryOperation
             expr = handleUnaryExpr(ctx, expr);
@@ -344,10 +363,32 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 expr = handleFunCall(ctx, expr);
             } else { // expr
                 // Arrays: TODO
+                // array 변수 호출
+                String idName = ctx.IDENT().getText();
+                if (symbolTable.getVarType(idName) == Type.INTARRAY) {
+                    expr += "aload_" + symbolTable.getVarId(idName) + "\n"
+                            + newTexts.get(ctx.expr(0))
+                            + "iaload" + "\n";
+                    // expr 1개 pop
+                    exprStack.pop();
+                    // return int add
+                    exprStack.add(Type.INT); // int array에서 load하는 것은 int이다.
+                }
             }
         }
         // IDENT '[' expr ']' '=' expr
         else { // Arrays: TODO			*/
+            // array 변수 선언
+            String idName = ctx.IDENT().getText();
+             if (symbolTable.getVarType(idName) == Type.INTARRAY) {
+                expr += "aload_" + symbolTable.getVarId(idName) + "\n"
+                    + newTexts.get(ctx.expr(0))
+                    + newTexts.get(ctx.expr(1))
+                    + "iastore" + "\n";
+                // expr 2개 pop해줌
+                exprStack.pop();
+                exprStack.pop();
+            }
         }
         newTexts.put(ctx, expr);
     }

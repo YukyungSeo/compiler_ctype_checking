@@ -87,13 +87,23 @@ public class BytecodeGenListenerHelper {
 	}
 
 	static SymbolTable.Type getType(Type_specContext ctx){
-		if(ctx.getText().equals("int")){
+		if(ctx.getText().equals("int"))
 			return SymbolTable.Type.INT;
-		} else if(ctx.getText().equals("float")){
+		else if(ctx.getText().equals("float"))
 			return SymbolTable.Type.FLOAT;
-		}
+		else if(ctx.getText().equals("void"))
+			return SymbolTable.Type.VOID;
 		return SymbolTable.Type.ERROR;
 	}
+
+	static SymbolTable.Type getArrType(Type_specContext ctx){
+		if(ctx.getText().equals("int"))
+			return SymbolTable.Type.INTARRAY;
+		else if(ctx.getText().equals("float"))
+			return SymbolTable.Type.FLOATARRAY;
+		return SymbolTable.Type.ERROR;
+	}
+
 
 //	static SymbolTable.Type getType(ExprContext ctx){
 //		if(ctx.getText().equals("int")){
