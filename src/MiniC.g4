@@ -11,13 +11,16 @@ var_decl	:  type_spec IDENT ';'
 		| type_spec IDENT '=' LITERAL ';'	
 		| type_spec IDENT '[' LITERAL ']' ';'	;
 type_spec	: VOID				
-		| INT				;
+		| INT
+        | FLOAT
+        | INTARRAY
+        | FLOATARRAY    ;
 fun_decl	: type_spec IDENT '(' params ')' compound_stmt ;
 params		: param (',' param)*		
 		| VOID				
 		|			;
 param		: type_spec IDENT		
-		| type_spec IDENT '[' ']'	;
+		| type_spec IDENT '[' ']';
 stmt		: expr_stmt			
 		| compound_stmt			
 		| if_stmt			
@@ -27,7 +30,7 @@ expr_stmt	: expr ';'			;
 while_stmt	: WHILE '(' expr ')' stmt	;
 compound_stmt: '{' local_decl* stmt* '}'	;
 local_decl	: type_spec IDENT ';'
-		| type_spec IDENT '=' LITERAL ';'	
+		| type_spec IDENT '=' LITERAL ';'
 		| type_spec IDENT '[' LITERAL ']' ';'	;
 if_stmt		: IF '(' expr ')' stmt		
 		| IF '(' expr ')' stmt ELSE stmt 		;
@@ -39,9 +42,9 @@ expr	:  LITERAL
 	| IDENT '[' expr ']'			 
 	| IDENT '(' args ')'			
 	| '-' expr				 
-	| '+' expr				 
-	| '--' expr				 
-	| '++' expr				 
+	| '+' expr
+	| '--' expr
+	| '++' expr
 	| expr '*' expr				 
 	| expr '/' expr				 
 	| expr '%' expr				 
@@ -63,6 +66,9 @@ args	: expr (',' expr)*
 
 VOID: 'void';
 INT: 'int';
+FLOAT: 'float';
+INTARRAY: 'int[]';
+FLOATARRAY: 'float[]';
 
 WHILE: 'while';
 IF: 'if';
@@ -81,7 +87,7 @@ IDENT  : [a-zA-Z_]
         )*;
 
 
-LITERAL:   DecimalConstant     |   OctalConstant     |   HexadecimalConstant     ;
+LITERAL:   DecimalConstant     |   OctalConstant     |   HexadecimalConstant   |   FloatConstant   ;
 
 
 DecimalConstant
@@ -95,6 +101,10 @@ OctalConstant
 
 HexadecimalConstant
     :   '0' [xX] [0-9a-fA-F] +
+    ;
+
+FloatConstant
+    :   [0-9] '.' [0-9] +
     ;
 
 WS  :   (   ' '

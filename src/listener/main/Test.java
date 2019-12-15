@@ -8,11 +8,13 @@ public class Test {
     public Test() {
     }
 
+    public static int add1(){
+        return 1;
+    }
+
     public static void main(String[] var0) {
-        int x = 4;
-        int y = 3;
-        if(x == 1 && y == 3){
-            System.out.println(2);
-        }
+        float[] arr = new float[5];
+        arr[0] = 6;
+        arr[1] = arr[0] + add1();
     }
 }

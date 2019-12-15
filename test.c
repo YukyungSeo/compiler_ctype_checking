@@ -1,14 +1,9 @@
-int sum(int x) {
-	int sum = 0;
-	int i = 0;
-	while (i < x) {
-	    ++i;
-	    sum = sum + i;
-	}
-	return sum;
+int[] init() {
+    int a[5];
+    return a;
 }
 
 void main () {
-    int x = 100;
-	_print(sum(x));
+    float[] arr;
+    arr = init();
 }

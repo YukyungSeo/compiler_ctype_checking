@@ -1,6 +1,6 @@
 // Generated from C:/Users/YukyungSeo/git/compiler_ctype_checking/BytecodeGenerator/src\MiniC.g4 by ANTLR 4.7.2
  
-package gen;
+package generated;
 
 import org.antlr.v4.runtime.Lexer;
 import org.antlr.v4.runtime.CharStream;

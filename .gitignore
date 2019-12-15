@@ -1,2 +1,7 @@
-.idea
+.idea/
 *.c
+*.class
+*.xml
+*.j
+test folder/
+out/
