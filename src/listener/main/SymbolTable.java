@@ -151,7 +151,10 @@ public class SymbolTable {
 
 		FInfo finfo = new FInfo();
 
-		res +=  fname + "(" + argtype + ")" + rtype;
+//		if(argtype.equals(""))
+//			res += fname + "(V)" + rtype;
+//		else
+			res +=  fname + "(" + argtype + ")" + rtype;
 
 		int count = getCharCount(argtype);
 		finfo.paramsT = new Type[argtype.length() - count];
@@ -172,9 +175,9 @@ public class SymbolTable {
 		finfo.sigStr = res;
 		Type type = getTypefromString(rtype.charAt(0));
 		if(type == null){
-			if(argtype.charAt(1) == 'I')
+			if(rtype.charAt(1) == 'I')
 				finfo.returnT = Type.INTARRAY;
-			else
+			else if(rtype.charAt(1) == 'F')
 				finfo.returnT = Type.FLOATARRAY;
 		} else {
 			finfo.returnT = type;
