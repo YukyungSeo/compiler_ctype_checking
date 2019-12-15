@@ -268,6 +268,7 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
         String varDecl = "";
 
         if (isDeclWithInit(ctx)) {
+            // int/float IDENT '=' LETTER;
             if (getType(ctx.type_spec()).equals(Type.INT)) {
                 String vId = symbolTable.getVarId(ctx);
 
@@ -285,6 +286,7 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                         + "fstore_" + vId + "\n";
             }
         } else if(isArrayDecl(ctx)){
+            // int/float IDENT[];
             if (getType(ctx.type_spec()).equals(Type.INT)) {
                 String vId = symbolTable.getVarId(ctx);
 
@@ -300,7 +302,8 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
             } else if (getType(ctx.type_spec()).equals(Type.FLOAT)) {
                 String vId = symbolTable.getVarId(ctx);
                 varDecl += "ldc " + ctx.LITERAL().getText() + "\n"
-                        + "fstore_" + vId + "\n";
+                        + "newarray float" + "\n"
+                        + "astore_" + vId + "\n";
             }
         }
         newTexts.put(ctx, varDecl);
@@ -320,15 +323,19 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
         if (ctx.getChildCount() == 1) { // IDENT | LITERAL
             if (ctx.IDENT() != null) {
                 String idName = ctx.IDENT().getText();
-                if (symbolTable.getVarType(idName) == Type.INT) {
+                Type IDNETtype = symbolTable.getVarType(idName);
+                if (IDNETtype.equals(Type.INT)) {
                     expr += "iload_" + symbolTable.getVarId(idName) + " \n";
                     exprStack.add(Type.INT);
-                } else if (symbolTable.getVarType(idName) == Type.FLOAT) {
+                } else if (IDNETtype.equals(Type.FLOAT)) {
                     expr += "fload_" + symbolTable.getVarId(idName) + " \n";
                     exprStack.add(Type.FLOAT);
-                } else if (symbolTable.getVarType(idName) == Type.INTARRAY) {
+                } else if (IDNETtype.equals(Type.INTARRAY)) {
                     expr += "aload_" + symbolTable.getVarId(idName) + " \n";
                     exprStack.add(Type.INTARRAY);
+                } else if (IDNETtype.equals(Type.FLOATARRAY)) {
+                    expr += "aload_" + symbolTable.getVarId(idName) + " \n";
+                    exprStack.add(Type.FLOATARRAY);
                 }
                 //else	// Type int array => Later! skip now..
                 //	expr += "           lda " + symbolTable.get(ctx.IDENT().getText()).value + " \n";
@@ -406,26 +413,40 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
         else { // Arrays: TODO			*/
             // array 변수 선언
             String idName = ctx.IDENT().getText();
-             if (symbolTable.getVarType(idName) == Type.INTARRAY) {
-                // expr 2개 pop해줌
-                Type valueType = exprStack.pop();
-                Type indexType = exprStack.pop();
-                if(indexType.equals(Type.INT)) {
-                    if(valueType.equals(Type.INT)) {
-                        expr += "aload_" + symbolTable.getVarId(idName) + "\n"
-                                + newTexts.get(ctx.expr(0))
-                                + newTexts.get(ctx.expr(1))
-                                + "iastore" + "\n";
-                    } else {
-                        // int[]에 float을 넣을 경우 error
-                        Compilable = false;
-                        System.out.println(String.format("Error : Line %d : Cannot cast from float to int", ctx.start.getLine()));
-                    }
+
+            // expr 2개 pop해줌
+            Type valueType = exprStack.pop();
+            Type indexType = exprStack.pop();
+
+            // index에 int가 들어 갔나 확인
+            if(indexType.equals(Type.INT)) {
+                // 배열의 type과 들어가는 값이 같은지 다른지 확인
+                Type IDENTtype = symbolTable.getVarType(idName);
+                if (IDENTtype.equals(Type.INTARRAY) && valueType.equals(Type.INT)) {
+                    expr += "aload_" + symbolTable.getVarId(idName) + "\n"
+                            + newTexts.get(ctx.expr(0))
+                            + newTexts.get(ctx.expr(1))
+                            + "iastore" + "\n";
+                } else if(IDENTtype.equals(Type.FLOATARRAY) && valueType.equals(Type.FLOAT)){
+                    expr += "aload_" + symbolTable.getVarId(idName) + "\n"
+                            + newTexts.get(ctx.expr(0))
+                            + newTexts.get(ctx.expr(1))
+                            + "fastore" + "\n";
+                } else if(IDENTtype.equals(Type.FLOATARRAY) && valueType.equals(Type.INT)){
+                    expr += "aload_" + symbolTable.getVarId(idName) + "\n"
+                            + newTexts.get(ctx.expr(0))
+                            + newTexts.get(ctx.expr(1))
+                            + "fastore" + "\n";
                 } else {
-                    // int[] index에 float을 넣을 경우 error
+                    // 특정 type 배열에 다른 type의 변수를 넣을 경우 error
+                    // 현재는 int[]의 int에 float을 넣는 경우 밖에 없음
                     Compilable = false;
-                    System.out.println(String.format("Error : Line %d : float cannot be index of array", ctx.start.getLine()));
+                    System.out.println(String.format("Error : Line %d : Cannot cast from float to int", ctx.start.getLine()));
                 }
+            } else {
+                // 배열 index에 int외의 값을 넣을 경우 error
+                Compilable = false;
+                System.out.println(String.format("Error : Line %d : float cannot be index of array", ctx.start.getLine()));
             }
         }
         newTexts.put(ctx, expr);
@@ -619,17 +640,17 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
             expr = newTexts.get(ctx.args())
                     + "invokestatic " + getCurrentClassName() + "/" + symbolTable.getFunSpecStr(fname) + "\n";
             // 매개변수를 stack에서 pop하면서
-            // 함수와 매개변수들 간의 type이 맞는지 확인한다.
-            // int에 float을 넣으면 error가 뜨도록 한다.
+            // 함수의 매개변수와 실제 넣어지는 매개변수들 간의 type이 맞는지 확인한다.
+            // float에 int를 넣는 경우를 제외하고 type이 다르면 error가 뜨도록 한다.
             Type[] paramType = symbolTable.getFunSpec(fname).paramsT;
             for(int i=paramType.length-1; i>=0; i--) {
-                Type type = exprStack.pop();
-                if(!paramType[i].equals(type)){
+                Type typeOfValue = exprStack.pop();
+                if(!paramType[i].equals(typeOfValue)){
                     // type이 다를 때
-                    if(!(paramType[i].equals(Type.FLOAT) && type.equals(Type.INT))){
+                    if(!(paramType[i].equals(Type.FLOAT) && typeOfValue.equals(Type.INT))){
                         // Float에 int를 넣는 것을 제외하고 다 error
                         Compilable = false;
-                        System.out.println(String.format("Error : Line %d : Cannot cast from %s to %s", ctx.start.getLine(), type.toString(), paramType[i].toString()));
+                        System.out.println(String.format("Error : Line %d : Cannot cast from %s to %s", ctx.start.getLine(), typeOfValue.toString(), paramType[i].toString()));
                     }
                 }
 

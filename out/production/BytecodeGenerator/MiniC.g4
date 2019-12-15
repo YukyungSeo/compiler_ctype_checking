@@ -13,7 +13,8 @@ var_decl	:  type_spec IDENT ';'
 type_spec	: VOID				
 		| INT
         | FLOAT
-        | INTARRAY  ;
+        | INTARRAY
+        | FLOATARRAY    ;
 fun_decl	: type_spec IDENT '(' params ')' compound_stmt ;
 params		: param (',' param)*		
 		| VOID				
@@ -67,6 +68,7 @@ VOID: 'void';
 INT: 'int';
 FLOAT: 'float';
 INTARRAY: 'int[]';
+FLOATARRAY: 'float[]';
 
 WHILE: 'while';
 IF: 'if';
