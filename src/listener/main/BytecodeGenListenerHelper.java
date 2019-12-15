@@ -80,29 +80,70 @@ public class BytecodeGenListenerHelper {
 			rst += "I";
 		} else if (str.equals("float")){
 			rst = "F";
-		} else if (str.equals("void")){
+		} else if(str.equals("int[]")){
+            rst += "[I";
+        } else if (str.equals("float[]")){
+            rst = "[F";
+        } else if (str.equals("void")){
 			rst = "V";
 		}
 		return rst;
 	}
 
+    static String getTypeText(SymbolTable.Type type) {
+        // <Fill in>
+        String rst = "";
+
+        if(type.equals(SymbolTable.Type.INT)){
+            rst += "I";
+        } else if (type.equals(SymbolTable.Type.FLOAT)){
+            rst = "F";
+        } else if(type.equals(SymbolTable.Type.INTARRAY)){
+            rst += "[I";
+        } else if (type.equals(SymbolTable.Type.FLOATARRAY)){
+            rst = "[F";
+        } else if (type.equals(SymbolTable.Type.VOID)){
+            rst = "V";
+        }
+        return rst;
+    }
+
+//	static String getArrTypeText(Type_specContext typespec) {
+//		// <Fill in>
+//		String str = typespec.getChild(0).getText();
+//		String rst = "";
+//
+//		if(str.equals("int")){
+//			rst += "[I";
+//		} else if (str.equals("float")){
+//			rst = "[F";
+//		} else if (str.equals("void")){
+//			rst = "V";
+//		}
+//		return rst;
+//	}
+
 	static SymbolTable.Type getType(Type_specContext ctx){
-		if(ctx.getText().equals("int")){
+		if(ctx.getText().equals("int"))
 			return SymbolTable.Type.INT;
-		} else if(ctx.getText().equals("float")){
+		else if(ctx.getText().equals("float"))
 			return SymbolTable.Type.FLOAT;
-		}
+		else if(ctx.getText().equals("int[]"))
+            return SymbolTable.Type.INTARRAY;
+        else if(ctx.getText().equals("float[]"))
+            return SymbolTable.Type.FLOATARRAY;
+		else if(ctx.getText().equals("void"))
+			return SymbolTable.Type.VOID;
 		return SymbolTable.Type.ERROR;
 	}
 
-//	static SymbolTable.Type getType(ExprContext ctx){
-//		if(ctx.getText().equals("int")){
-//			return SymbolTable.Type.INT;
-//		} else if(ctx.getText().equals("float")){
-//			return SymbolTable.Type.FLOAT;
-//		}
-//		return SymbolTable.Type.ERROR;
-//	}
+	static SymbolTable.Type getArrType(Type_specContext ctx){
+		if(ctx.getText().equals("int"))
+			return SymbolTable.Type.INTARRAY;
+		else if(ctx.getText().equals("float"))
+			return SymbolTable.Type.FLOATARRAY;
+		return SymbolTable.Type.ERROR;
+	}
 
 	// params
 	static String getParamName(ParamContext param) {
@@ -112,10 +153,11 @@ public class BytecodeGenListenerHelper {
 	
 	static String getParamTypesText(ParamsContext params) {
 		String typeText = "";
-		
+
 		for(int i = 0; i < params.param().size(); i++) {
-			MiniCParser.Type_specContext typespec = (MiniCParser.Type_specContext)  params.param(i).getChild(0);
-			typeText += getTypeText(typespec); // + ";";
+			ParamContext param = params.param(i);
+			Type_specContext typespec = (Type_specContext) param.getChild(0);
+            typeText += getTypeText(typespec); // + ";";
 		}
 		return typeText;
 	}

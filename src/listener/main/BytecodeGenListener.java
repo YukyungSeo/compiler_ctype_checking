@@ -56,7 +56,7 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
     @Override
     public void enterLocal_decl(Local_declContext ctx) {
         if (isArrayDecl(ctx)) {
-            symbolTable.putLocalVar(getLocalVarName(ctx), Type.INTARRAY);
+            symbolTable.putLocalVar(getLocalVarName(ctx), getArrType(ctx.type_spec()));
         } else if (isDeclWithInit(ctx)) {
             symbolTable.putLocalVarWithInitVal(getLocalVarName(ctx), getType(ctx.type_spec()), initVal(ctx));
         } else { // simple decl
@@ -220,6 +220,8 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 stmt += "ireturn" + "\n";       //int
             } else if(type.equals(Type.FLOAT)){
                 stmt += "freturn" + "\n";
+            } else if(type.equals(Type.INTARRAY) || type.equals(Type.FLOATARRAY)){
+                stmt += "areturn" + "\n";
             }
         }
         newTexts.put(ctx, stmt);
@@ -282,6 +284,24 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 varDecl += "ldc " + ctx.LITERAL().getText() + "\n"
                         + "fstore_" + vId + "\n";
             }
+        } else if(isArrayDecl(ctx)){
+            if (getType(ctx.type_spec()).equals(Type.INT)) {
+                String vId = symbolTable.getVarId(ctx);
+
+                if(!ctx.LITERAL().getText().contains(".")) {
+                    varDecl += "ldc " + ctx.LITERAL().getText() + "\n"
+                            + "newarray int" + "\n"
+                            + "astore_" + vId + "\n";
+                } else {
+                    // int[] index에 float을 넣을 경우 error
+                    Compilable = false;
+                    System.out.println(String.format("Error : Line %d : float cannot be index of array", ctx.start.getLine()));
+                }
+            } else if (getType(ctx.type_spec()).equals(Type.FLOAT)) {
+                String vId = symbolTable.getVarId(ctx);
+                varDecl += "ldc " + ctx.LITERAL().getText() + "\n"
+                        + "fstore_" + vId + "\n";
+            }
         }
         newTexts.put(ctx, varDecl);
     }
@@ -306,6 +326,9 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 } else if (symbolTable.getVarType(idName) == Type.FLOAT) {
                     expr += "fload_" + symbolTable.getVarId(idName) + " \n";
                     exprStack.add(Type.FLOAT);
+                } else if (symbolTable.getVarType(idName) == Type.INTARRAY) {
+                    expr += "aload_" + symbolTable.getVarId(idName) + " \n";
+                    exprStack.add(Type.INTARRAY);
                 }
                 //else	// Type int array => Later! skip now..
                 //	expr += "           lda " + symbolTable.get(ctx.IDENT().getText()).value + " \n";
@@ -313,10 +336,11 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 String literalStr = ctx.LITERAL().getText();
                 expr += "ldc " + literalStr + " \n";
                 // 넣는 숫자가 float인가, int인가 확인
-                if (!literalStr.matches("."))
+                if (!literalStr.contains("."))
                     exprStack.add(Type.INT);
                 else
                     exprStack.add(Type.FLOAT);
+
             }
         } else if (ctx.getChildCount() == 2) { // UnaryOperation
             expr = handleUnaryExpr(ctx, expr);
@@ -326,13 +350,28 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 expr = newTexts.get(ctx.expr(0));
 
             } else if (ctx.getChild(1).getText().equals("=")) {    // IDENT '=' expr
-                Type t = exprStack.pop();
-                if (t.equals(Type.INT)) {
-                    expr = newTexts.get(ctx.expr(0))
-                            + "istore_" + symbolTable.getVarId(ctx.IDENT().getText()) + " \n";
-                } else if (t.equals(Type.FLOAT)) {
-                    expr = newTexts.get(ctx.expr(0))
-                            + "fstore_" + symbolTable.getVarId(ctx.IDENT().getText()) + " \n";
+                Type typeOfRight = exprStack.pop();
+                Type typeOfLeft = symbolTable.getVarType(ctx.IDENT().getText());
+                if(typeOfRight.equals(typeOfLeft)) {
+                    if (typeOfRight.equals(Type.INT)) {
+                        expr = newTexts.get(ctx.expr(0))
+                                + "istore_" + symbolTable.getVarId(ctx.IDENT().getText()) + " \n";
+                    } else if (typeOfRight.equals(Type.FLOAT)) {
+                        expr = newTexts.get(ctx.expr(0))
+                                + "fstore_" + symbolTable.getVarId(ctx.IDENT().getText()) + " \n";
+                    } else if (typeOfRight.equals(Type.INTARRAY) || typeOfRight.equals(Type.FLOATARRAY)) {
+                        expr = newTexts.get(ctx.expr(0))
+                                + "astore_" + symbolTable.getVarId(ctx.IDENT().getText()) + "\n";
+                    }
+                } else {
+                    // 서로의 type이 아닐 경우
+                    if(typeOfLeft.equals(Type.FLOAT) && typeOfRight.equals(Type.INT)){
+                        expr = newTexts.get(ctx.expr(0))
+                                + "fstore_" + symbolTable.getVarId(ctx.IDENT().getText()) + " \n";
+                    } else {
+                        Compilable = false;
+                        System.out.println(String.format("Error : Line %d : Cannot cast from %s to %s", ctx.start.getLine(), typeOfRight.toString(), typeOfLeft.toString()));
+                    }
                 }
             } else {                                            // binary operation
                 expr = handleBinExpr(ctx, expr);
@@ -344,10 +383,50 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 expr = handleFunCall(ctx, expr);
             } else { // expr
                 // Arrays: TODO
+                // array 변수 호출
+                String idName = ctx.IDENT().getText();
+                if (symbolTable.getVarType(idName) == Type.INTARRAY) {
+                    // expr 1개 pop
+                    Type indextype = exprStack.pop();
+                    if(indextype.equals(Type.INT)) {
+                        expr += "aload_" + symbolTable.getVarId(idName) + "\n"
+                                + newTexts.get(ctx.expr(0))
+                                + "iaload" + "\n";
+                    } else {
+                        // int[] index에 float을 넣을 경우 error
+                        Compilable = false;
+                        System.out.println(String.format("Error : Line %d : float cannot be index of array", ctx.start.getLine()));
+                    }
+                    // return int add
+                    exprStack.add(Type.INT); // int array에서 load하는 것은 int이다.
+                }
             }
         }
         // IDENT '[' expr ']' '=' expr
         else { // Arrays: TODO			*/
+            // array 변수 선언
+            String idName = ctx.IDENT().getText();
+             if (symbolTable.getVarType(idName) == Type.INTARRAY) {
+                // expr 2개 pop해줌
+                Type valueType = exprStack.pop();
+                Type indexType = exprStack.pop();
+                if(indexType.equals(Type.INT)) {
+                    if(valueType.equals(Type.INT)) {
+                        expr += "aload_" + symbolTable.getVarId(idName) + "\n"
+                                + newTexts.get(ctx.expr(0))
+                                + newTexts.get(ctx.expr(1))
+                                + "iastore" + "\n";
+                    } else {
+                        // int[]에 float을 넣을 경우 error
+                        Compilable = false;
+                        System.out.println(String.format("Error : Line %d : Cannot cast from float to int", ctx.start.getLine()));
+                    }
+                } else {
+                    // int[] index에 float을 넣을 경우 error
+                    Compilable = false;
+                    System.out.println(String.format("Error : Line %d : float cannot be index of array", ctx.start.getLine()));
+                }
+            }
         }
         newTexts.put(ctx, expr);
     }
@@ -535,7 +614,7 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
             expr = "getstatic java/lang/System/out Ljava/io/PrintStream; " + "\n"
                     + newTexts.get(ctx.args())
                     + "invokevirtual " + symbolTable.getFunSpecStr("_print")
-                    + "(" + (exprStack.pop().equals(Type.INT) ? "I" : "F") + ")V" + "\n";
+                    + "(" + getTypeText(exprStack.pop()) + ")V" + "\n";
         } else {
             expr = newTexts.get(ctx.args())
                     + "invokestatic " + getCurrentClassName() + "/" + symbolTable.getFunSpecStr(fname) + "\n";
@@ -543,12 +622,17 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
             // 함수와 매개변수들 간의 type이 맞는지 확인한다.
             // int에 float을 넣으면 error가 뜨도록 한다.
             Type[] paramType = symbolTable.getFunSpec(fname).paramsT;
-            for(int i=0; i<paramType.length; i++) {
+            for(int i=paramType.length-1; i>=0; i--) {
                 Type type = exprStack.pop();
-                if(paramType[i].equals(Type.INT) && type.equals(Type.FLOAT)){
-                    Compilable = false;
-                    System.out.println(String.format("Error : Line %d : Cannot cast from float to int", ctx.start.getLine()));
+                if(!paramType[i].equals(type)){
+                    // type이 다를 때
+                    if(!(paramType[i].equals(Type.FLOAT) && type.equals(Type.INT))){
+                        // Float에 int를 넣는 것을 제외하고 다 error
+                        Compilable = false;
+                        System.out.println(String.format("Error : Line %d : Cannot cast from %s to %s", ctx.start.getLine(), type.toString(), paramType[i].toString()));
+                    }
                 }
+
             }
             // return할 type을 stack에 넣어준다.
             Type rtype = symbolTable.getFunSpec(fname).returnT;
