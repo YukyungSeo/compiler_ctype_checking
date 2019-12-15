@@ -1,5 +1,6 @@
 package listener.main;
 
+import com.sun.xml.internal.bind.v2.model.core.ID;
 import gen.MiniCBaseListener;
 import gen.MiniCParser;
 import gen.MiniCParser.*;
@@ -391,21 +392,30 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
             } else { // expr
                 // Arrays: TODO
                 // array 변수 호출
-                String idName = ctx.IDENT().getText();
-                if (symbolTable.getVarType(idName) == Type.INTARRAY) {
-                    // expr 1개 pop
-                    Type indextype = exprStack.pop();
-                    if(indextype.equals(Type.INT)) {
+
+                // expr 1개 pop
+                Type indextype = exprStack.pop();
+
+                // 배열 index가 int인지 확인
+                if(indextype.equals(Type.INT)) {
+                    String idName = ctx.IDENT().getText();
+                    Type IDENTtype = symbolTable.getVarType(idName);
+
+                    if (IDENTtype.equals(Type.INTARRAY)) {
                         expr += "aload_" + symbolTable.getVarId(idName) + "\n"
                                 + newTexts.get(ctx.expr(0))
                                 + "iaload" + "\n";
-                    } else {
-                        // int[] index에 float을 넣을 경우 error
-                        Compilable = false;
-                        System.out.println(String.format("Error : Line %d : float cannot be index of array", ctx.start.getLine()));
+                        exprStack.add(Type.INT); // int array에서 load하는 것은 int이다.
+                    } else if (IDENTtype.equals(Type.FLOATARRAY)) {
+                        expr += "aload_" + symbolTable.getVarId(idName) + "\n"
+                                + newTexts.get(ctx.expr(0))
+                                + "faload" + "\n";
+                        exprStack.add(Type.FLOAT); // float array에서 load하는 것은 float이다.
                     }
-                    // return int add
-                    exprStack.add(Type.INT); // int array에서 load하는 것은 int이다.
+                } else {
+                    // 배열 index에 float을 넣을 경우 error
+                    Compilable = false;
+                    System.out.println(String.format("Error : Line %d : float cannot be index of array", ctx.start.getLine()));
                 }
             }
         }
