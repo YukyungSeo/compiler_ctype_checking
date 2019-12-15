@@ -12,7 +12,8 @@ var_decl	:  type_spec IDENT ';'
 		| type_spec IDENT '[' LITERAL ']' ';'	;
 type_spec	: VOID				
 		| INT
-        | FLOAT   ;
+        | FLOAT
+        | INTARRAY  ;
 fun_decl	: type_spec IDENT '(' params ')' compound_stmt ;
 params		: param (',' param)*		
 		| VOID				
@@ -28,7 +29,7 @@ expr_stmt	: expr ';'			;
 while_stmt	: WHILE '(' expr ')' stmt	;
 compound_stmt: '{' local_decl* stmt* '}'	;
 local_decl	: type_spec IDENT ';'
-		| type_spec IDENT '=' LITERAL ';'	
+		| type_spec IDENT '=' LITERAL ';'
 		| type_spec IDENT '[' LITERAL ']' ';'	;
 if_stmt		: IF '(' expr ')' stmt		
 		| IF '(' expr ')' stmt ELSE stmt 		;
@@ -40,9 +41,9 @@ expr	:  LITERAL
 	| IDENT '[' expr ']'			 
 	| IDENT '(' args ')'			
 	| '-' expr				 
-	| '+' expr				 
-	| '--' expr				 
-	| '++' expr				 
+	| '+' expr
+	| '--' expr
+	| '++' expr
 	| expr '*' expr				 
 	| expr '/' expr				 
 	| expr '%' expr				 
@@ -65,6 +66,7 @@ args	: expr (',' expr)*
 VOID: 'void';
 INT: 'int';
 FLOAT: 'float';
+INTARRAY: 'int[]';
 
 WHILE: 'while';
 IF: 'if';

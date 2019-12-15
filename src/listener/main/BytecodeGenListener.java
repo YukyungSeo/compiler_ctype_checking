@@ -220,6 +220,8 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 stmt += "ireturn" + "\n";       //int
             } else if(type.equals(Type.FLOAT)){
                 stmt += "freturn" + "\n";
+            } else if(type.equals(Type.INTARRAY) || type.equals(Type.FLOATARRAY)){
+                stmt += "areturn" + "\n";
             }
         }
         newTexts.put(ctx, stmt);
@@ -355,6 +357,9 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 } else if (t.equals(Type.FLOAT)) {
                     expr = newTexts.get(ctx.expr(0))
                             + "fstore_" + symbolTable.getVarId(ctx.IDENT().getText()) + " \n";
+                } else if(t.equals(Type.INTARRAY) || t.equals(Type.FLOATARRAY)){
+                    expr = newTexts.get(ctx.expr(0))
+                            + "astore_" + symbolTable.getVarId(ctx.IDENT().getText()) + "\n";
                 }
             } else {                                            // binary operation
                 expr = handleBinExpr(ctx, expr);
@@ -597,7 +602,7 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
             expr = "getstatic java/lang/System/out Ljava/io/PrintStream; " + "\n"
                     + newTexts.get(ctx.args())
                     + "invokevirtual " + symbolTable.getFunSpecStr("_print")
-                    + "(" + (exprStack.pop().equals(Type.INT) ? "I" : "F") + ")V" + "\n";
+                    + "(" + getTypeText(exprStack.pop()) + ")V" + "\n";
         } else {
             expr = newTexts.get(ctx.args())
                     + "invokestatic " + getCurrentClassName() + "/" + symbolTable.getFunSpecStr(fname) + "\n";

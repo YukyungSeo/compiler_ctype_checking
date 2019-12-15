@@ -93,18 +93,14 @@ public class SymbolTable {
 			Type type = null;
 			String typestr = params.param(i).getChild(0).getText();
 			if (typestr.equals("int")) {
-				// int일 경우
-				if(params.param(i).getChildCount() == 2)
-					type = Type.INT;
-				// int array일 경우
-				else
-					type = Type.INTARRAY;
+				type = Type.INT;
 			} else if(typestr.equals("float")){
-				if(params.param(i).getChildCount() == 2)
-					type = Type.FLOAT;
-				else
-					type = Type.FLOATARRAY;
-			} else if (typestr.equals("void")) {
+				type = Type.FLOAT;
+			} else if (typestr.equals("int[]")) {
+				type = Type.INTARRAY;
+			} else if (typestr.equals("float[]")) {
+				type = Type.FLOATARRAY;
+			}else if (typestr.equals("void")) {
 				type = Type.VOID;
 			}
 

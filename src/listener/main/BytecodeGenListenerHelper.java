@@ -80,32 +80,58 @@ public class BytecodeGenListenerHelper {
 			rst += "I";
 		} else if (str.equals("float")){
 			rst = "F";
-		} else if (str.equals("void")){
+		} else if(str.equals("int[]")){
+            rst += "[I";
+        } else if (str.equals("float[]")){
+            rst = "[F";
+        } else if (str.equals("void")){
 			rst = "V";
 		}
 		return rst;
 	}
 
-	static String getArrTypeText(Type_specContext typespec) {
-		// <Fill in>
-		String str = typespec.getChild(0).getText();
-		String rst = "";
+    static String getTypeText(SymbolTable.Type type) {
+        // <Fill in>
+        String rst = "";
 
-		if(str.equals("int")){
-			rst += "[I";
-		} else if (str.equals("float")){
-			rst = "[F";
-		} else if (str.equals("void")){
-			rst = "V";
-		}
-		return rst;
-	}
+        if(type.equals(SymbolTable.Type.INT)){
+            rst += "I";
+        } else if (type.equals(SymbolTable.Type.FLOAT)){
+            rst = "F";
+        } else if(type.equals(SymbolTable.Type.INTARRAY)){
+            rst += "[I";
+        } else if (type.equals(SymbolTable.Type.FLOATARRAY)){
+            rst = "[F";
+        } else if (type.equals(SymbolTable.Type.VOID)){
+            rst = "V";
+        }
+        return rst;
+    }
+
+//	static String getArrTypeText(Type_specContext typespec) {
+//		// <Fill in>
+//		String str = typespec.getChild(0).getText();
+//		String rst = "";
+//
+//		if(str.equals("int")){
+//			rst += "[I";
+//		} else if (str.equals("float")){
+//			rst = "[F";
+//		} else if (str.equals("void")){
+//			rst = "V";
+//		}
+//		return rst;
+//	}
 
 	static SymbolTable.Type getType(Type_specContext ctx){
 		if(ctx.getText().equals("int"))
 			return SymbolTable.Type.INT;
 		else if(ctx.getText().equals("float"))
 			return SymbolTable.Type.FLOAT;
+		else if(ctx.getText().equals("int[]"))
+            return SymbolTable.Type.INTARRAY;
+        else if(ctx.getText().equals("float[]"))
+            return SymbolTable.Type.FLOATARRAY;
 		else if(ctx.getText().equals("void"))
 			return SymbolTable.Type.VOID;
 		return SymbolTable.Type.ERROR;
@@ -131,10 +157,7 @@ public class BytecodeGenListenerHelper {
 		for(int i = 0; i < params.param().size(); i++) {
 			ParamContext param = params.param(i);
 			Type_specContext typespec = (Type_specContext) param.getChild(0);
-			if(param.getChildCount() == 2)
-				typeText += getTypeText(typespec); // + ";";
-			else
-				typeText += getArrTypeText(typespec); // + ";";
+            typeText += getTypeText(typespec); // + ";";
 		}
 		return typeText;
 	}
