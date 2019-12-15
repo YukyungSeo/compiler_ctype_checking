@@ -350,16 +350,28 @@ public class BytecodeGenListener extends MiniCBaseListener implements ParseTreeL
                 expr = newTexts.get(ctx.expr(0));
 
             } else if (ctx.getChild(1).getText().equals("=")) {    // IDENT '=' expr
-                Type t = exprStack.pop();
-                if (t.equals(Type.INT)) {
-                    expr = newTexts.get(ctx.expr(0))
-                            + "istore_" + symbolTable.getVarId(ctx.IDENT().getText()) + " \n";
-                } else if (t.equals(Type.FLOAT)) {
-                    expr = newTexts.get(ctx.expr(0))
-                            + "fstore_" + symbolTable.getVarId(ctx.IDENT().getText()) + " \n";
-                } else if(t.equals(Type.INTARRAY) || t.equals(Type.FLOATARRAY)){
-                    expr = newTexts.get(ctx.expr(0))
-                            + "astore_" + symbolTable.getVarId(ctx.IDENT().getText()) + "\n";
+                Type typeOfRight = exprStack.pop();
+                Type typeOfLeft = symbolTable.getVarType(ctx.IDENT().getText());
+                if(typeOfRight.equals(typeOfLeft)) {
+                    if (typeOfRight.equals(Type.INT)) {
+                        expr = newTexts.get(ctx.expr(0))
+                                + "istore_" + symbolTable.getVarId(ctx.IDENT().getText()) + " \n";
+                    } else if (typeOfRight.equals(Type.FLOAT)) {
+                        expr = newTexts.get(ctx.expr(0))
+                                + "fstore_" + symbolTable.getVarId(ctx.IDENT().getText()) + " \n";
+                    } else if (typeOfRight.equals(Type.INTARRAY) || typeOfRight.equals(Type.FLOATARRAY)) {
+                        expr = newTexts.get(ctx.expr(0))
+                                + "astore_" + symbolTable.getVarId(ctx.IDENT().getText()) + "\n";
+                    }
+                } else {
+                    // 서로의 type이 아닐 경우
+                    if(typeOfLeft.equals(Type.FLOAT) && typeOfRight.equals(Type.INT)){
+                        expr = newTexts.get(ctx.expr(0))
+                                + "fstore_" + symbolTable.getVarId(ctx.IDENT().getText()) + " \n";
+                    } else {
+                        Compilable = false;
+                        System.out.println(String.format("Error : Line %d : Cannot cast from %s to %s", ctx.start.getLine(), typeOfRight.toString(), typeOfLeft.toString()));
+                    }
                 }
             } else {                                            // binary operation
                 expr = handleBinExpr(ctx, expr);
