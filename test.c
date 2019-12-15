@@ -1,5 +1,9 @@
-void main () {
+int[] init() {
     int a[5];
-    a[1] = 3;
-    _print(a);
+    return a;
+}
+
+void main () {
+    float[] arr;
+    arr = init();
 }

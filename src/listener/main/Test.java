@@ -8,18 +8,13 @@ public class Test {
     public Test() {
     }
 
-    public static int[] init(int[] arr){
-        arr[2] = 200;
-        arr[3] = 300;
-        return arr;
+    public static int add1(){
+        return 1;
     }
 
     public static void main(String[] var0) {
-        int arr[] = new int[5];
-        int[] b;
-        arr[0] = 600;
-        arr[1] = 100;
-        b = init(arr);
-        System.out.println(b[3]);
+        float[] arr = new float[5];
+        arr[0] = 6;
+        arr[1] = arr[0] + add1();
     }
 }
